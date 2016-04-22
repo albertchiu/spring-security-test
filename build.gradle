@@ -1,0 +1,26 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.5
+targetCompatibility = 1.5
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile('org.springframework.security:spring-security-core:3.1.7.RELEASE')
+    compile('org.springframework.security:spring-security-ldap:3.1.7.RELEASE')
+    compile('org.springframework.ldap:spring-ldap-core')
+    testCompile('junit:junit:4.8.2')
+    runtime('org.apache.directory.server:apacheds-all:1.5.5')
+    runtime('org.slf4j:slf4j-api:1.5.6')
+    runtime('org.slf4j:slf4j-simple:1.5.6')
+}
+
+[compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
