@@ -1,6 +1,6 @@
 package idv.ccw.ldap;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.junit.After;
 import org.junit.Before;
@@ -35,18 +35,22 @@ import junit.framework.Assert;
 public class LdapTests {
     private static final String root = "dc=springframework,dc=org";
     private static final String ldif = "classpath*:*.ldif";
-    private static final int port = 53389;//ActiveDirectory:389
+    private static final int port = 53389;// ActiveDirectory:389
+    private static final String ldapUrl = "ldap://127.0.0.1:" + String.valueOf(port);
+    private final String searchBase = "ou=people,dc=springframework,dc=org";
+    private final String authenticationUser = "javadude";
+    private final String authenticationPassword = "javadudespassword";
     private ApacheDSContainer apacheDsContainer = null;
 
     @Before
-    public void before() throws Exception {
+    public void setUp() throws Exception {
         this.apacheDsContainer = new ApacheDSContainer(root, ldif);
         this.apacheDsContainer.setPort(port);
         this.apacheDsContainer.afterPropertiesSet();
     }
 
     @After
-    public void after() throws Exception {
+    public void tearDown() throws Exception {
         if (this.apacheDsContainer != null) {
             this.apacheDsContainer.stop();
         }
@@ -55,40 +59,32 @@ public class LdapTests {
     @Test
     public void testAuthentication() throws Exception {
         LdapContextSource contextSource = new LdapContextSource();
-        contextSource.setUrl("ldap://127.0.0.1:" + String.valueOf(port));
-        //contextSource.setUserDn("uid=bob,ou=people,dc=springframework,dc=org");
-        //contextSource.setPassword("bobspassword");
+        contextSource.setUrl(ldapUrl);
+        // contextSource.setUserDn("uid=bob,ou=people,dc=springframework,dc=org");
+        // contextSource.setPassword("bobspassword");
         contextSource.afterPropertiesSet();
 
-        String searchBase = "ou=people,dc=springframework,dc=org";
-        String searchFilter = "(uid={0})";//ActiveDirectory:sAMAccountName
-        LdapUserSearch userSearch = new FilterBasedLdapUserSearch(searchBase, searchFilter, contextSource);
+        String searchFilter = "(uid={0})";// ActiveDirectory:sAMAccountName
+        LdapUserSearch userSearch = new FilterBasedLdapUserSearch(this.searchBase, searchFilter, contextSource);
         BindAuthenticator bind = new BindAuthenticator(contextSource);
         bind.setUserSearch(userSearch);
 
-        final LdapAuthenticationProvider provider = new LdapAuthenticationProvider(bind);
-
-        AuthenticationManager manager = new ProviderManager(new ArrayList<AuthenticationProvider>() {
-            private static final long serialVersionUID = -8980855146895150361L;
-            {
-                this.add(provider);
-            }
-        });
-
-        Authentication userToken = new UsernamePasswordAuthenticationToken("javadude", "javadudespassword");
+        AuthenticationProvider provider = new LdapAuthenticationProvider(bind);
+        AuthenticationManager manager = new ProviderManager(Arrays.asList(provider));
+        Authentication userToken = new UsernamePasswordAuthenticationToken(this.authenticationUser,
+                this.authenticationPassword);
         manager.authenticate(userToken);
     }
 
     @Test
     public void testLdapTemplateAuthenticate() throws Exception {
         LdapContextSource contextSource = new LdapContextSource();
-        contextSource.setUrl("ldap://127.0.0.1:" + String.valueOf(port));
+        contextSource.setUrl(ldapUrl);
         contextSource.afterPropertiesSet();
 
         LdapTemplate tmpl = new LdapTemplate(contextSource);
-        String searchBase = "ou=people,dc=springframework,dc=org";
-        EqualsFilter filter = new EqualsFilter("uid", "javadude");
-        boolean isAuthenticated = tmpl.authenticate(searchBase, filter.toString(), "javadudespassword");
+        EqualsFilter filter = new EqualsFilter("uid", this.authenticationUser);
+        boolean isAuthenticated = tmpl.authenticate(this.searchBase, filter.toString(), this.authenticationPassword);
 
         Assert.assertTrue("authentication failed", isAuthenticated);
     }

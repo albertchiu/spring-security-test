@@ -1,6 +1,6 @@
 package idv.ccw.ldap;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.junit.Test;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,17 +13,10 @@ import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAu
 public class ActiveDirectoryTests {
     @Test
     public void testAuthentication() throws Exception {
-        final AuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider("mytest.com",
+        AuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider("mytest.com",
                 "ldap://192.168.0.1:389");
-
         Authentication userToken = new UsernamePasswordAuthenticationToken("username", "password");
-        AuthenticationManager manager = new ProviderManager(new ArrayList<AuthenticationProvider>() {
-            private static final long serialVersionUID = -8980855146895150361L;
-            {
-                this.add(provider);
-            }
-        });
-
+        AuthenticationManager manager = new ProviderManager(Arrays.asList(provider));
         manager.authenticate(userToken);
     }
 }
